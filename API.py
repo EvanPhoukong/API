@@ -146,10 +146,37 @@ def get_address(token, addrs, seen):
     print(f'Next time you run this program, ENTER THE NUMBER {found + missing + seen} when prompted to continue where you left off!')
 
 
+def test_API(token):
+
+
+    url = r"https://apis.usps.com/addresses/v3/address"
+
+    headers = {
+        'UseAgenr-t': 'Mozilla/5.0',
+        "Content-Type":"application/json",
+        "Authorization": f"Bearer {token}"
+    }
+
+    params = {
+    "streetAddress": '1',
+    "state": "CA",
+    "city": "STOCKTON",
+    }
+
+    res = requests.get(url=url, params=params, headers=headers, verify=False)
+
+    if res.status_code == 200:
+        print('API CONNECTION SUCCESSFUL\n')
+
+    else:
+        print(f"API CONNECTION UNSUCCESSFUL - Please wait a minute to query the API again")
+        sys.exit()
+
     
 
 if __name__ == "__main__":
     addrs = arcpy.da.TableToNumPyArray(layer, field)[field].tolist()
     token = generate_token()
+    test_API(token)
     n = int(input('Please input where you left off. If this is your first time running the program or you would like to start from the beginning, enter the number 0: '))
     get_address(token, addrs[n:], n)
