@@ -1,0 +1,155 @@
+import requests, sys, urllib3, arcpy, random, time, threading, pickle
+
+#C:\Program Files\ArcGIS\Pro\bin\Python\envs\arcgispro-py3
+#"SQL Database - C:\Users\ephoukong\OneDrive - City of Stockton\Documents\ArcGIS\Projects\ZipCodes\SQLServer-COS-DB-01-GISDATA.sde"
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+arcpy.env.workspace = r"C:\Users\ephoukong\OneDrive - City of Stockton\Documents\ArcGIS\Projects\ZipCodes\SQLServer-COS-DB-01-GISDATA.sde" #----PLEASE REPLACE LINE WITH ABSOLUTE DATABASE PATH----
+arcpy.env.overwriteOutput = True
+layer = arcpy.env.workspace + r'\GISDATA.DBO.Addresses'
+field = "FullAddress"
+
+
+stop_flag = False
+
+def listen_for_stop():
+    global stop_flag
+    input("Press ENTER at any time to stop...\n")
+    stop_flag = True
+
+
+def generate_token():
+
+    url = r"https://apis.usps.com/oauth2/v3/token"
+
+    headers = {
+        'UseAgenr-t': 'Mozilla/5.0',
+        "Content-Type":"application/json"
+    }
+
+    params = {
+        "grant_type": "client_credentials",
+        # "client_id": "TwoIIfbOTGJfC4GeETh2kB4PpHnbApJNKZTbcp0oLQnMyXqe",
+        # "client_secret": "BVPKQpYcCBnUxXmnxAr1cyBvUA80GmCRCqPJc5xXeEKCQp13knC7MqLCu2YwgI2B"
+        "client_id": "2rctZeCgewKiG6DEyhgzWOmxjGPZ7KgPfUdrAl0GRASCtpjU",
+        "client_secret": "N1vBbHb42hvctltAdbzvZzX4dpRTNCJckEb62LlvuB6DgYVtLo6uY8FYRG2PAhnq"
+    }
+
+    res = requests.post(url=url, json=params, headers=headers, verify=False)
+
+    if res.status_code == 200:
+        data = res.json()
+        access_token = data.get("access_token")
+        print("Access Token:", access_token)
+        print("Expires in (seconds):", data.get("expires_in"))
+        print()
+
+    else:
+        print("Error:", res.status_code, res.text)
+        sys.exit()
+
+    return access_token
+
+def pause():
+
+    for _ in range(62):
+        if stop_flag:
+            return True
+        time.sleep(1)
+    
+    return False
+
+
+def get_address(token, addrs):
+
+    url = r"https://apis.usps.com/oauth2/v3/token"
+
+    headers = {
+        'UseAgenr-t': 'Mozilla/5.0',
+        "Content-Type":"application/json"
+    }
+
+    params = {
+        "grant_type": "client_credentials",
+        # "client_id": "TwoIIfbOTGJfC4GeETh2kB4PpHnbApJNKZTbcp0oLQnMyXqe",
+        # "client_secret": "BVPKQpYcCBnUxXmnxAr1cyBvUA80GmCRCqPJc5xXeEKCQp13knC7MqLCu2YwgI2B"
+        "client_id": "2rctZeCgewKiG6DEyhgzWOmxjGPZ7KgPfUdrAl0GRASCtpjU",
+        "client_secret": "N1vBbHb42hvctltAdbzvZzX4dpRTNCJckEb62LlvuB6DgYVtLo6uY8FYRG2PAhnq"
+    }
+
+    res = requests.post(url=url, json=params, headers=headers, verify=False)
+
+    if res.status_code == 200:
+        data = res.json()
+        access_token = data.get("access_token")
+        # print("Access Token:", access_token)
+        # print("Expires in (seconds):", data.get("expires_in"))
+        # print()
+
+    else:
+        print("Error:", res.status_code, res.text)
+        sys.exit()
+
+    return access_token
+
+
+def get_address(token, addrs, seen):
+
+    missing = found = 0
+
+    url = r"https://apis.usps.com/addresses/v3/address"
+
+    headers = {
+        'UseAgenr-t': 'Mozilla/5.0',
+        "Content-Type":"application/json",
+        "Authorization": f"Bearer {token}"
+    }
+
+    params = {
+    "streetAddress": None,
+    "state": "CA",
+    "city": "STOCKTON",
+    }
+
+    # Start the input listener thread
+    print()
+    threading.Thread(target=listen_for_stop, daemon=True).start()
+    
+    pause()
+
+    print("\nAddresses:")
+
+
+    for a in addrs:
+        
+        print(a)
+        params['streetAddress'] = a
+
+        res = requests.get(url=url, params=params, headers=headers, verify=False)
+
+        if res.status_code == 200:
+            data = res.json()
+            addr = data.get("address")
+            print("Address Info:", addr)
+            found += 1
+
+        else:
+            # print("Error:", res.status_code, res.text)
+            print(f"Address not found: {a}")
+            missing += 1  
+
+        if pause():
+            break
+    
+    print(f"Found: {found}")
+    print(f"Missing: {missing}\n")
+    print(f'Next time you run this program, ENTER THE NUMBER {found + missing + seen} when prompted to continue where you left off!')
+
+
+    
+
+if __name__ == "__main__":
+    addrs = arcpy.da.TableToNumPyArray(layer, field)[field].tolist()
+    token = generate_token()
+    n = int(input('Please input where you left off. If this is your first time running the program or you would like to start from the beginning, enter the number 0: '))
+    get_address(token, addrs[n:], n)
