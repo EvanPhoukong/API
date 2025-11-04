@@ -1,4 +1,5 @@
 import requests, sys, urllib3, arcpy, random, time, threading, pickle
+from pathlib import Path
 
 #C:\Program Files\ArcGIS\Pro\bin\Python\envs\arcgispro-py3
 #"SQL Database - C:\Users\ephoukong\OneDrive - City of Stockton\Documents\ArcGIS\Projects\ZipCodes\SQLServer-COS-DB-01-GISDATA.sde"
@@ -93,7 +94,7 @@ def get_address(token, addrs):
     return access_token
 
 
-def get_address(token, addrs, seen):
+def get_addresses(token, addrs, seen):
 
     missing = found = 0
 
@@ -139,11 +140,13 @@ def get_address(token, addrs, seen):
             missing += 1  
 
         if pause():
-            break
+           break
     
     print(f"Found: {found}")
     print(f"Missing: {missing}\n")
-    print(f'Next time you run this program, ENTER THE NUMBER {found + missing + seen} when prompted to continue where you left off!')
+
+    state = open('state', 'ab')
+    pickle.dump(found + missing + seen, state)
 
 
 def test_API(token):
@@ -175,8 +178,17 @@ def test_API(token):
     
 
 if __name__ == "__main__":
+
     addrs = arcpy.da.TableToNumPyArray(layer, field)[field].tolist()
+
     token = generate_token()
     test_API(token)
-    n = int(input('Please input where you left off. If this is your first time running the program or you would like to start from the beginning, enter the number 0: '))
-    get_address(token, addrs[n:], n)
+    
+    path = Path('state')
+    if path.exists():
+        state = open('state', 'rb')
+        n = pickle.load(state)
+    else:
+        n = 0
+
+    get_addresses(token, addrs[n:], n)
