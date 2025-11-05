@@ -120,42 +120,53 @@ def get_addresses(token, addrs, seen):
     pause()
 
     print("\nAddresses:")
-
+    done = False
 
     for a in addrs:
-        
-        print(a)
-        params['streetAddress'] = a
 
-        res = requests.get(url=url, params=params, headers=headers, verify=False)
+        if done:
+            break
 
-        if res.status_code == 200:
-            data = res.json()
-            addr = data.get("address")
-            print("Address Info:", addr)
+        success = False
 
-            with open('found.csv', 'a+', newline='') as file:
-                writer = csv.DictWriter(file, fieldnames=addr.keys())
+        while not success:
+            
+            print(a)
+            params['streetAddress'] = a
 
-                # Only write header if file is empty
-                if file.tell() == 0:
-                    writer.writeheader()
+            res = requests.get(url=url, params=params, headers=headers, verify=False)
 
-                # Write the dictionary as a new row
-                writer.writerow(addr)
+            if res.status_code == 200:
+                data = res.json()
+                addr = data.get("address")
+                print("Address Info:", addr)
 
-            found += 1
+                with open('found.csv', 'a+', newline='') as file:
+                    writer = csv.DictWriter(file, fieldnames=addr.keys())
 
-        else:
-            # print("Error:", res.status_code, res.text)
-            with open('missing.txt', 'a+') as file:
-                file.write(f"{a}\n")
+                    # Only write header if file is empty
+                    if file.tell() == 0:
+                        writer.writeheader()
 
-            print(f"Address not found: {a}")
-            missing += 1  
+                    # Write the dictionary as a new row
+                    writer.writerow(addr)
 
-        if pause():
-           break
+                found += 1
+                success = True
+
+            else:
+                print("Error:", res.status_code, res.text)
+                if res.status_code != -1:
+                    with open('missing.txt', 'a+') as file:
+                        file.write(f"{a}\n")
+                    success = True
+                    missing += 1  
+
+                print(f"Address not found: {a}")
+
+            if pause():
+                done = True
+                break
     
     print(f"Found: {found}")
     print(f"Missing: {missing}\n")
@@ -194,10 +205,10 @@ def test_API(token):
 
 if __name__ == "__main__":
 
-    # addrs = arcpy.da.TableToNumPyArray(layer, field)[field].tolist()
+    addrs = arcpy.da.TableToNumPyArray(layer, field)[field].tolist()
 
-    addrs = pd.read_excel('Check_Addresses.xlsx')
-    addrs = addrs['FullAddress']
+    # addrs = pd.read_excel('Check_Addresses.xlsx')
+    # addrs = addrs['FullAddress']
 
     token = generate_token()
     test_API(token)
