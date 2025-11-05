@@ -1,4 +1,4 @@
-import requests, sys, urllib3, arcpy, random, time, threading, pickle
+import requests, sys, urllib3, arcpy, random, time, threading, pickle, csv
 from pathlib import Path
 
 #C:\Program Files\ArcGIS\Pro\bin\Python\envs\arcgispro-py3
@@ -53,7 +53,7 @@ def generate_token():
 
 def pause():
 
-    for _ in range(62):
+    for _ in range(5):
         if stop_flag:
             return True
         time.sleep(1)
@@ -132,10 +132,24 @@ def get_addresses(token, addrs, seen):
             data = res.json()
             addr = data.get("address")
             print("Address Info:", addr)
+
+            with open('found.csv', 'a+', newline='') as file:
+                writer = csv.DictWriter(file, fieldnames=addr.keys())
+
+                # Only write header if file is empty
+                if file.tell() == 0:
+                    writer.writeheader()
+
+                # Write the dictionary as a new row
+                writer.writerow(addr)
+
             found += 1
 
         else:
             # print("Error:", res.status_code, res.text)
+            with open('missing.txt', 'a+') as file:
+                file.write(f"{a}\n")
+
             print(f"Address not found: {a}")
             missing += 1  
 
