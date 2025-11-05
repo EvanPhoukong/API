@@ -54,7 +54,7 @@ def generate_token():
 
 def pause():
 
-    for _ in range(62):
+    for _ in range(61):
         if stop_flag:
             return True
         time.sleep(1)
@@ -157,12 +157,14 @@ def get_addresses(token, addrs, seen):
 
             else:
                 # print("Error:", res.status_code, res.text)
+
                 if res.status_code != 429:
                     with open('missing.txt', 'a+') as file:
                         file.write(f"{a}\n")
                     success = True
                     missing += 1  
                     print(f"Address not found: {a}")
+
                 else:
                     print('Too many API queries. Retrying after one minute.')
 
@@ -173,7 +175,7 @@ def get_addresses(token, addrs, seen):
     print(f"Found: {found}")
     print(f"Missing: {missing}\n")
 
-    state = open('state', 'ab')
+    state = open('state', 'wb')
     pickle.dump(found + missing + seen, state)
 
 
