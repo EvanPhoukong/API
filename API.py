@@ -54,7 +54,7 @@ def generate_token():
 
 def pause():
 
-    for _ in range(5):
+    for _ in range(62):
         if stop_flag:
             return True
         time.sleep(1)
@@ -117,7 +117,8 @@ def get_addresses(token, addrs, seen):
     print()
     threading.Thread(target=listen_for_stop, daemon=True).start()
     
-    pause()
+    # pause()
+    time.sleep(3)
 
     print("\nAddresses:")
     done = False
@@ -155,14 +156,15 @@ def get_addresses(token, addrs, seen):
                 success = True
 
             else:
-                print("Error:", res.status_code, res.text)
-                if res.status_code != -1:
+                # print("Error:", res.status_code, res.text)
+                if res.status_code != 429:
                     with open('missing.txt', 'a+') as file:
                         file.write(f"{a}\n")
                     success = True
                     missing += 1  
-
-                print(f"Address not found: {a}")
+                    print(f"Address not found: {a}")
+                else:
+                    print('Too many API queries. Retrying after one minute.')
 
             if pause():
                 done = True
@@ -205,13 +207,13 @@ def test_API(token):
 
 if __name__ == "__main__":
 
-    addrs = arcpy.da.TableToNumPyArray(layer, field)[field].tolist()
+    # addrs = arcpy.da.TableToNumPyArray(layer, field)[field].tolist()
 
-    # addrs = pd.read_excel('Check_Addresses.xlsx')
-    # addrs = addrs['FullAddress']
+    addrs = pd.read_excel('Check_Addresses.xlsx')
+    addrs = addrs['FullAddress']
 
     token = generate_token()
-    test_API(token)
+    # test_API(token)
     
     path = Path('state')
     if path.exists():
