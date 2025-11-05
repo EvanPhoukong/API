@@ -1,4 +1,5 @@
 import requests, sys, urllib3, arcpy, random, time, threading, pickle, csv
+import pandas as pd
 from pathlib import Path
 
 #C:\Program Files\ArcGIS\Pro\bin\Python\envs\arcgispro-py3
@@ -193,7 +194,10 @@ def test_API(token):
 
 if __name__ == "__main__":
 
-    addrs = arcpy.da.TableToNumPyArray(layer, field)[field].tolist()
+    # addrs = arcpy.da.TableToNumPyArray(layer, field)[field].tolist()
+
+    addrs = pd.read_excel('Check_Addresses.xlsx')
+    addrs = addrs['FullAddress']
 
     token = generate_token()
     test_API(token)
