@@ -159,8 +159,13 @@ def get_addresses(token, addrs, seen):
                 # print("Error:", res.status_code, res.text)
 
                 if res.status_code != 429:
-                    with open('missing.txt', 'a+') as file:
+                    with open('missing.csv', 'a+', newline='') as file:
+
+                        if file.tell() == 0:
+                            file.write('missing\n')
+
                         file.write(f"{a}\n")
+
                     success = True
                     missing += 1  
                     print(f"Address not found: {a}")
