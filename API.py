@@ -54,7 +54,7 @@ def generate_token():
 
 def pause():
 
-    for _ in range(61):
+    for _ in range(30):
         if stop_flag:
             return True
         time.sleep(1)
@@ -154,10 +154,11 @@ def get_addresses(token, addrs, seen):
 
                 found += 1
                 success = True
+                with open('state', 'wb') as state:
+                    pickle.dump(found + missing + seen, state)
 
             else:
                 # print("Error:", res.status_code, res.text)
-
                 if res.status_code != 429:
                     with open('missing.csv', 'a+', newline='') as file:
 
@@ -168,6 +169,8 @@ def get_addresses(token, addrs, seen):
 
                     success = True
                     missing += 1  
+                    with open('state', 'wb') as state:
+                        pickle.dump(found + missing + seen, state)
                     print(f"Address not found: {a}")
 
                 else:
@@ -179,9 +182,6 @@ def get_addresses(token, addrs, seen):
     
     print(f"Found: {found}")
     print(f"Missing: {missing}\n")
-
-    state = open('state', 'wb')
-    pickle.dump(found + missing + seen, state)
 
 
 def test_API(token):
@@ -228,5 +228,4 @@ if __name__ == "__main__":
         n = pickle.load(state)
     else:
         n = 0
-
     get_addresses(token, addrs[n:], n)
