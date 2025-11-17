@@ -17,10 +17,10 @@ df = pd.read_csv(csv_path)
 check_addrs = r"C:\Users\ephoukong\OneDrive - City of Stockton\API\Check_Addresses.xlsx"
 df2 = pd.read_excel(check_addrs)
 
-address_col = "streetAddressAbbreviation"
+address_col = "FullAddress"
 zip_col = "ZIPCode"
 
-addresses_to_update = set(df[address_col].dropna().astype(str).str.strip())
+addresses_to_update = set(df["streetAddressAbbreviation"].dropna().astype(str).str.strip())
 correct = 0 
 incorrect = 0
 
@@ -37,20 +37,31 @@ matches = df[df["old_zips"] == df["ZIPCode"]]
 diffs = df[df["old_zips"] != df["ZIPCode"]]
 # print(diffs[["FullAddress", "ZIPCode", "old_zips"]])
 
+
+addresses_to_update = set(df["FullAddress"])
+seen = set()
+
 with arcpy.da.UpdateCursor(layer, field) as cursor:
     for row in cursor:
-        addr = str(row[0]).strip()
+        addr = (str(row[0]))
         if addr in addresses_to_update:
+            #Detect Duplicates
+            # if addr in seen:
+            #     print('Duplicate: ', addr)
+            #     sys.exit()
+            # seen.add(addr)
             uspsZip = str(df.loc[df[address_col] == addr, zip_col].iloc[0]).strip()
             sdeZip = str(row[1]).strip()
-            #cursor.updateRow(row)
 
             if uspsZip == sdeZip:
                 correct += 1
             else:
                 incorrect += 1 
+                row[1] = uspsZip
+                #cursor.updateRow(row)
                 print(f"{addr} -- USPS: {uspsZip}, SDE: {sdeZip}")
 
+print(f"\nMatch: {correct}, Different: {incorrect}")
 incorrect = (df["old_zips"] != df["ZIPCode"]).sum()
 correct = (df["old_zips"] == df["ZIPCode"]).sum()
 print(f"\nMatch: {correct}, Different: {incorrect}")
