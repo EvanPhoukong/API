@@ -11,7 +11,7 @@ arcpy.env.overwriteOutput = True
 layer = arcpy.env.workspace + r'\GISDATA.DBO.Addresses'
 field = "FullAddress"
 
-
+BUFFER = 30
 stop_flag = False
 
 def listen_for_stop():
@@ -54,7 +54,7 @@ def generate_token():
 
 def pause():
 
-    for _ in range(30):
+    for _ in range(BUFFER):
         if stop_flag:
             return True
         time.sleep(1)
