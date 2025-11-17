@@ -96,6 +96,19 @@ if matched_oids:
 else:
     print("No addresses matched. Nothing exported.")
 
+arcpy.AddField_management(output_fc, "USPS_Zip", "TEXT", field_length=20)
+
+with arcpy.da.UpdateCursor(output_fc, ["FullAddres", "USPS_Zip"]) as cursor:
+
+    for row in cursor:
+        addr = str(row[0]).strip()
+
+        # lookup USPS data
+        if addr in df[address_col].values:
+            uspsZip = str(df.loc[df[address_col] == addr, zip_col].iloc[0]).strip()
+            row[1] = uspsZip    # USPS_Zip
+
+            cursor.updateRow(row)
 
 #Count the numbers of addresses that had correct zipcode values (database zips matches USPS zips) and incorrect zipcode values
 print(f"\nMatch: {correct}, Different: {incorrect}")
